@@ -1,0 +1,44 @@
+version: '3.7'
+
+services:
+  db:
+    container_name: psql
+    image: postgres
+    restart: always
+    volumes:
+      - ./back-docker-node/pg_data:/var/lib/postgresql/pg_data
+      - ./back-docker-node/script:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/pg_data
+    ports:
+      - '5432:5432'
+  back-docker-node:
+    container_name: api
+    build:
+      context: ./back-docker-node
+      dockerfile: Dockerfile
+    volumes:
+      - './back-docker-node:/app'
+      - './back-docker-node/node_modules:/app/node_modules'
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+  site-vote-docker-react:
+    container_name: front
+    build:
+      context: ./site-vote-docker-react
+      dockerfile: Dockerfile
+    volumes:
+      - './site-vote-docker-react:/app'
+      - './site-vote-docker-react/node_modules:/app/node_modules'
+    ports:
+      - 3000:3000
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    stdin_open: true
+    depends_on:
+      - back-docker-node
